@@ -1,541 +1,389 @@
-const STORAGE_KEY = 'focusforge:v1';
-const TOKEN_KEY = 'focusforge:spotify';
-const PKCE_KEY = 'focusforge:pkce';
+const STORAGE_KEY = 'focusforge:v3';
+const TOKEN_KEY = 'focusforge:spotify:v1';
+const PKCE_KEY = 'focusforge:pkce:v1';
 
 const MODES = {
-  pomodoro: { label: 'Pomodoro', emoji: '🍅', description: '25 / 5 with a longer reset after 4 rounds', focus: 25, short: 5, long: 15, rounds: 4 },
-  '52-17': { label: '52 / 17', emoji: '🕘', description: 'One long focus block, one meaningful break', focus: 52, short: 17, long: 17, rounds: 1 },
-  deep: { label: 'Deep Work', emoji: '◉', description: '90 minutes on, 20 minutes off', focus: 90, short: 20, long: 20, rounds: 1 },
-  animedoro: { label: 'Animedoro', emoji: '📺', description: '40 minutes of focus, 20 minutes to reset', focus: 40, short: 20, long: 20, rounds: 1 },
-  countdown: { label: 'Countdown', emoji: '⏳', description: 'One focused block with no automatic breaks', focus: 30, short: 5, long: 15, rounds: 1 },
-  stopwatch: { label: 'Stopwatch', emoji: '⏱', description: 'Count up until you decide to stop', focus: 0, short: 0, long: 0, rounds: 1 },
-  custom: { label: 'Custom', emoji: '✦', description: 'Your own rhythm, down to the minute', focus: 45, short: 10, long: 20, rounds: 4 }
+  pomodoro: { label:'Pomodoro', icon:'🍅', description:'25 min focus · 5 min break · long break after 4 rounds', focus:25, short:5, long:15, rounds:4 },
+  '52-17': { label:'52 / 17', icon:'◷', description:'52 min focus · 17 min break', focus:52, short:17, long:17, rounds:1 },
+  deep: { label:'Deep Work', icon:'◉', description:'90 min focus · 20 min break', focus:90, short:20, long:20, rounds:1 },
+  animedoro: { label:'Animedoro', icon:'▸', description:'40 min focus · 20 min reset', focus:40, short:20, long:20, rounds:1 },
+  countdown: { label:'Countdown', icon:'⌛', description:'A single custom countdown with no auto-break', focus:30, short:5, long:15, rounds:1 },
+  stopwatch: { label:'Stopwatch', icon:'⏱', description:'Count up until you stop', focus:0, short:0, long:0, rounds:1 },
+  custom: { label:'Custom', icon:'✦', description:'Set your own focus / break rhythm', focus:45, short:10, long:20, rounds:4 }
 };
 
 const THEMES = {
-  // External artwork is intentionally pulled from Unsplash's free image library so the
-  // themes feel like real photographic/illustrated landscapes instead of synthetic SVGs.
-  forest: { label: 'Alpine Coast', kicker: 'mist / evergreen / blue', art: 'https://images.unsplash.com/photo-1647013450473-673c4824e27f?auto=format&fit=crop&fm=jpg&q=85&w=2400', vars: { accent:'#73b9ff', accent2:'#3c8de8', bg:'#08111b' } },
-  midnight: { label: 'Cosmic Dunes', kicker: 'space / dusk / wide open', art: 'https://images.unsplash.com/photo-1765813957002-d38730e03b11?auto=format&fit=crop&fm=jpg&q=85&w=2400', vars: { accent:'#59b7ff', accent2:'#2f83da', bg:'#070d18' } },
-  desert: { label: 'Desert Twilight', kicker: 'sand / stars / cobalt', art: 'https://images.unsplash.com/photo-1650114013443-8c4d8b36b319?auto=format&fit=crop&fm=jpg&q=85&w=2400', vars: { accent:'#78aaff', accent2:'#4a77e8', bg:'#0e101a' } },
-  ocean: { label: 'PNW Coast', kicker: 'shore / rain / blue hour', art: 'https://images.unsplash.com/photo-1768666950721-725d5f943be8?auto=format&fit=crop&fm=jpg&q=85&w=2400', vars: { accent:'#55d9ff', accent2:'#249dcc', bg:'#06141d' } },
-  studio: { label: 'Moonlit Observatory', kicker: 'clean / lunar / calm', art: 'https://images.unsplash.com/photo-1540952602130-34ce5b4bac66?auto=format&fit=crop&fm=jpg&q=85&w=2400', vars: { accent:'#8bb9ff', accent2:'#5a85db', bg:'#0a0f19' } },
-  neon: { label: 'Aurora Bay', kicker: 'electric / night / coast', art: 'https://images.unsplash.com/photo-1550656722-8099c82ab00c?auto=format&fit=crop&fm=jpg&q=85&w=2400', vars: { accent:'#79a6ff', accent2:'#586eea', bg:'#080b18' } }
+  cosmic: {
+    label:'Cosmic Dunes', kicker:'space · desert · dusk',
+    art:'https://images.unsplash.com/photo-1765813957002-d38730e03b11?auto=format&fit=crop&fm=jpg&q=82&w=2400',
+    source:'https://unsplash.com/photos/stars-shine-brightly-over-dark-desert-dunes-at-night-gbmYqH4Wv1U',
+    vars:{ bg:'#06101e', panel:'rgba(7,17,31,.72)', panel2:'rgba(13,28,49,.82)', accent:'#63c5ff', accent2:'#3978ff', warm:'#e7b56c' }
+  },
+  pnw: {
+    label:'PNW Coast', kicker:'ocean · evergreen · blue hour',
+    art:'https://images.unsplash.com/photo-1559872204-3ba018836d10?auto=format&fit=crop&fm=jpg&q=82&w=2400',
+    source:'https://unsplash.com/s/photos/costa-de-oregon',
+    vars:{ bg:'#06131c', panel:'rgba(6,22,31,.68)', panel2:'rgba(12,34,45,.8)', accent:'#60dbff', accent2:'#2c94e5', warm:'#9ecab8' }
+  },
+  alpine: {
+    label:'Alpine', kicker:'snow · mountains · stillness',
+    art:'https://images.unsplash.com/photo-1565199953730-2ea3b119ae22?auto=format&fit=crop&fm=jpg&q=82&w=2400',
+    source:'https://unsplash.com/photos/landscape-photography-of-mountain-y-njhJIffIo',
+    vars:{ bg:'#08111b', panel:'rgba(8,19,30,.7)', panel2:'rgba(17,33,49,.82)', accent:'#8cc8ff', accent2:'#4f8de7', warm:'#cad9e6' }
+  },
+  desert: {
+    label:'Desert Twilight', kicker:'sand · stars · long horizon',
+    art:'https://images.unsplash.com/photo-1764821882901-01edc342cda3?auto=format&fit=crop&fm=jpg&q=82&w=2400',
+    source:'https://unsplash.com/photos/sun-setting-over-vast-desert-sand-dunes-ywOWmk02NFQ',
+    vars:{ bg:'#0f1017', panel:'rgba(20,17,24,.7)', panel2:'rgba(39,30,35,.82)', accent:'#78a9ff', accent2:'#5569dd', warm:'#e8ba78' }
+  },
+  coast: {
+    label:'Moonlit Coast', kicker:'lighthouse · sea · night',
+    art:'https://images.unsplash.com/photo-1763147297620-7f7663e906ad?auto=format&fit=crop&fm=jpg&q=82&w=2400',
+    source:'https://unsplash.com/photos/lighthouse-on-a-rocky-coast-under-the-milky-way-IW7KXVfrTp4',
+    vars:{ bg:'#071018', panel:'rgba(8,18,28,.72)', panel2:'rgba(18,34,45,.84)', accent:'#72c9ff', accent2:'#376fe2', warm:'#d6a96f' }
+  },
+  aurora: {
+    label:'Aurora Bay', kicker:'northern lights · ocean · night',
+    art:'https://images.unsplash.com/photo-1687373005624-53004f8b04de?auto=format&fit=crop&fm=jpg&q=82&w=2400',
+    source:'https://unsplash.com/photos/a-green-and-blue-aurora-above-a-snowy-mountain-range-pUqW9tM7nTM',
+    vars:{ bg:'#07111f', panel:'rgba(7,20,31,.72)', panel2:'rgba(14,35,47,.82)', accent:'#65d7ff', accent2:'#5778ff', warm:'#8ed7c2' }
+  }
 };
 
-const SOUND_DEFS = {
-  rain: { label: 'Rain on glass', detail: 'steady rainfall + soft drops', icon: '☂' },
-  brown: { label: 'Brown noise', detail: 'deep low-frequency masking', icon: '≈' },
-  cafe: { label: 'Quiet café', detail: 'murmur, cups, distant room tone', icon: '☕' },
-  fire: { label: 'Fireplace', detail: 'warm hiss + irregular crackle', icon: '♨' },
-  ocean: { label: 'Ocean surf', detail: 'slow rolling waves + foam', icon: '∿' },
-  wind: { label: 'Mountain wind', detail: 'broad airy gusts', icon: '⌁' },
-  white: { label: 'White noise', detail: 'bright even masking', icon: '▱' }
+const SOUNDS = {
+  rain: { label:'Rain on glass', detail:'soft drops · steady shower', file:'rain.wav', icon:'☂' },
+  brown:{ label:'Brown noise', detail:'deep low-frequency masking', file:'brown.wav', icon:'≈' },
+  cafe:{ label:'Quiet café', detail:'murmur · cups · room tone', file:'cafe.wav', icon:'☕' },
+  fire:{ label:'Fireplace', detail:'warm hiss · tiny crackles', file:'fire.wav', icon:'♨' },
+  ocean:{ label:'Ocean surf', detail:'rolling waves · distant foam', file:'ocean.wav', icon:'∿' },
+  wind:{ label:'Mountain wind', detail:'broad airy gusts', file:'wind.wav', icon:'⌁' },
+  white:{ label:'White noise', detail:'bright even masking', file:'white.wav', icon:'▱' }
 };
 
-const CURATED_PLAYLISTS = [
-  { title: 'Deep Focus Radio', note: 'ambient / instrumental', url: 'https://open.spotify.com/playlist/37i9dQZF1E4u1QVkSbTm4P', glyph: '◒' },
-  { title: 'Peaceful Piano', note: 'modern classical / soft', url: 'https://open.spotify.com/playlist/2CjqpIIpT2yriVzOqBIdiP', glyph: '⌁' },
-  { title: 'Deep Focus Music', note: 'nature / minimal / long-form', url: 'https://open.spotify.com/playlist/0AxEJ06ySlTBEyR3Aq6A39', glyph: '◉' },
-  { title: 'Pure Piano', note: 'solo piano / low distraction', url: 'https://open.spotify.com/playlist/1cvPpujeNNmtF3q2hjR3wp', glyph: '◇' }
+const PLAYLISTS = [
+  { title:'Deep Focus', note:'ambient electric guitar · long-form', url:'https://open.spotify.com/playlist/37i9dQZF1DWZeKCadgRdKQ', icon:'◒' },
+  { title:'Deep Focus Radio', note:'ambient · instrumental · radio', url:'https://open.spotify.com/playlist/37i9dQZF1E4u1QVkSbTm4P', icon:'◎' },
+  { title:'Peaceful Piano', note:'modern classical · soft', url:'https://open.spotify.com/playlist/2CjqpIIpT2yriVzOqBIdiP', icon:'⌁' },
+  { title:'lofi beats', note:'chill beats · low distraction', url:'https://open.spotify.com/playlist/37i9dQZF1DWWQRwui0ExPn', icon:'◌' },
+  { title:'Pure Piano', note:'piano · contemplative · quiet', url:'https://open.spotify.com/playlist/1cvPpujeNNmtF3q2hjR3wp', icon:'◇' }
 ];
 
 const QUOTES = [
   'Make the next hour count, not the next ten years.',
-  'You do not need to feel ready to begin.',
   'Protect the first five minutes. Momentum handles the rest.',
   'Less switching. More finishing.',
   'Work quietly. Let the result be loud.',
-  'A focused hour is still an hour you own.'
+  'A focused hour is still an hour you own.',
+  'One clear task is enough to start.'
 ];
 
-const defaultState = {
-  view: 'home',
-  theme: 'midnight',
-  customBg: '',
-  greetingName: 'there',
-  quoteEnabled: true,
-  notifications: true,
-  autoStartBreaks: false,
-  alertEnabled: true,
-  selectedMode: 'pomodoro',
-  durations: { focus: 25, short: 5, long: 15, rounds: 4, countdown: 30, animedoro: 40 },
-  timer: { running: false, phase: 'focus', remaining: 1500, total: 1500, cycle: 1, taskId: null, startedAt: null, accumulated: 0 },
-  tasks: [],
-  sessions: [],
-  soundLayers: {},
-  activePlaylist: null,
-  showCompleted: false,
-  spotify: { connected: false, profile: null, playlists: [], nowPlaying: null }
+const DEFAULT = {
+  view:'home',
+  theme:'cosmic',
+  customBg:'',
+  greetingName:'there',
+  selectedMode:'pomodoro',
+  durations:{ focus:25, short:5, long:15, rounds:4, countdown:30, animedoro:40 },
+  notifications:false,
+  alertEnabled:true,
+  autoStartBreaks:false,
+  quoteEnabled:true,
+  timer:{ running:false, phase:'focus', remaining:1500, total:1500, cycle:1, taskId:null, startedAt:null, lastTick:null },
+  tasks:[],
+  sessions:[],
+  sounds:{},
+  master:0.28,
+  spotify:{ connected:false, profile:null, playlists:[], nowPlaying:null }
 };
 
 let state = loadState();
-let audioEngine = null;
+let audio = { players:new Map(), initialized:false };
+let runtime = { spotifyClientId:'' };
 let timerInterval = null;
-let runtimeConfig = { spotifyClientId: '' };
+let clockInterval = null;
 
-function clone(obj) { return JSON.parse(JSON.stringify(obj)); }
-function mergeState(saved) {
-  const base = clone(defaultState);
-  return {
-    ...base,
-    ...saved,
-    durations: { ...base.durations, ...(saved?.durations || {}) },
-    timer: { ...base.timer, ...(saved?.timer || {}) },
-    spotify: { ...base.spotify, ...(saved?.spotify || {}) }
-  };
+function deepCopy(o){ return JSON.parse(JSON.stringify(o)); }
+function escapeHtml(s){ return String(s ?? '').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function save(){ localStorage.setItem(STORAGE_KEY,JSON.stringify(state)); }
+function uid(){ return globalThis.crypto?.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
+function loadState(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    const s=raw ? JSON.parse(raw) : deepCopy(DEFAULT);
+    const merged={...deepCopy(DEFAULT),...s,durations:{...DEFAULT.durations,...(s.durations||{})},timer:{...DEFAULT.timer,...(s.timer||{})},spotify:{...DEFAULT.spotify,...(s.spotify||{})},sounds:{...(s.sounds||{})}};
+    if(!THEMES[merged.theme]) merged.theme='cosmic';
+    if(!['home','focus','tasks','stats','sound','settings'].includes(merged.view)) merged.view='home';
+    return merged;
+  }catch{return deepCopy(DEFAULT);}
 }
-function loadState() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    const loaded = raw ? mergeState(JSON.parse(raw)) : clone(defaultState);
-    if (!THEMES[loaded.theme]) loaded.theme='midnight';
-    if (!['home','focus','tasks','stats','sound','settings'].includes(loaded.view)) loaded.view='home';
-    return loaded;
-  } catch { return clone(defaultState); }
+function selectedMode(){ return MODES[state.selectedMode] || MODES.pomodoro; }
+function durationSeconds(phase='focus'){
+  if(state.selectedMode==='stopwatch') return 0;
+  if(state.selectedMode==='countdown') return Math.max(1,Number(state.durations.countdown)||30)*60;
+  if(phase==='focus') return Math.max(1,Number(state.selectedMode==='animedoro'?state.durations.animedoro:state.durations.focus)||25)*60;
+  return Math.max(1,Number(phase==='long'?state.durations.long:state.durations.short)||5)*60;
 }
-function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+function formatTime(sec){
+  const n=Math.max(0,Math.floor(sec));
+  const h=Math.floor(n/3600),m=Math.floor((n%3600)/60),s=n%60;
+  return h ? `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}` : `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
 }
-function uid() { return crypto.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
-function esc(str) { return String(str ?? '').replace(/[&<>'"]/g, c => ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', "'":'&#39;', '"':'&quot;' }[c])); }
-function todayKey(date = new Date()) { const d = new Date(date); return d.toISOString().slice(0,10); }
-function formatTime(seconds, stopwatch = false) {
-  seconds = Math.max(0, Math.floor(seconds));
-  const h = Math.floor(seconds / 3600), m = Math.floor((seconds % 3600) / 60), s = seconds % 60;
-  if (stopwatch || h > 0) return [h, m, s].map((v,i) => i===0 ? String(v).padStart(2,'0') : String(v).padStart(2,'0')).join(':');
-  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+function formatMinutes(m){ if(m<60)return `${Math.round(m)}m`; const h=Math.floor(m/60),r=Math.round(m%60); return r?`${h}h ${r}m`:`${h}h`; }
+function dayKey(d=new Date()){ const x=new Date(d); return x.toLocaleDateString('en-CA'); }
+function sessionMinutes(days=1){
+  const start=Date.now()-(days-1)*86400000;
+  return state.sessions.filter(s=>new Date(s.endedAt).getTime()>=start).reduce((a,s)=>a+s.duration/60,0);
 }
-function formatMinutes(mins) {
-  if (mins < 60) return `${Math.round(mins)}m`;
-  const h = Math.floor(mins / 60), m = Math.round(mins % 60);
-  return m ? `${h}h ${m}m` : `${h}h`;
-}
-function localDateLabel(date = new Date()) {
-  return new Intl.DateTimeFormat(undefined, { weekday:'long', month:'long', day:'numeric' }).format(date);
-}
-function timeNow() { return new Intl.DateTimeFormat([], { hour:'numeric', minute:'2-digit' }).format(new Date()); }
-function currentMode() { return MODES[state.selectedMode] || MODES.pomodoro; }
-function durationForPhase(phase) {
-  if (state.selectedMode === 'stopwatch') return 0;
-  if (state.selectedMode === 'countdown') return state.durations.countdown * 60;
-  if (phase === 'focus') {
-    if (state.selectedMode === 'animedoro') return state.durations.animedoro * 60;
-    return state.durations.focus * 60;
-  }
-  if (phase === 'long') return state.durations.long * 60;
-  return state.durations.short * 60;
-}
-function getCurrentTask() { return state.tasks.find(t => t.id === state.timer.taskId) || null; }
-function taskStats() {
-  const active = state.tasks.filter(t => !t.completed).length;
-  const completed = state.tasks.filter(t => t.completed).length;
-  return { active, completed };
-}
-function focusMinutesForRange(days) {
-  const cutoff = Date.now() - (days - 1) * 86400000;
-  return state.sessions.filter(s => new Date(s.endedAt).getTime() >= cutoff).reduce((n,s) => n + s.duration / 60, 0);
-}
-function streak() {
-  const days = new Set(state.sessions.map(s => todayKey(s.endedAt)));
-  let n = 0; const d = new Date();
-  if (!days.has(todayKey(d))) d.setDate(d.getDate() - 1);
-  while (days.has(todayKey(d))) { n++; d.setDate(d.getDate() - 1); }
+function streak(){
+  const days=new Set(state.sessions.map(s=>dayKey(s.endedAt))); let d=new Date(); let n=0;
+  if(!days.has(dayKey(d))) d.setDate(d.getDate()-1);
+  while(days.has(dayKey(d))){ n++; d.setDate(d.getDate()-1); }
   return n;
 }
-function trend(days=7) {
-  const out = [];
-  const now = new Date(); now.setHours(0,0,0,0);
-  for (let i = days - 1; i >= 0; i--) {
-    const d = new Date(now); d.setDate(d.getDate() - i);
-    const key = todayKey(d);
-    const minutes = state.sessions.filter(s => todayKey(s.endedAt) === key).reduce((n,s)=>n+s.duration/60,0);
-    out.push({ key, label: d.toLocaleDateString([], { weekday:'short' }), minutes });
-  }
+function trend(days=7){
+  const out=[]; const base=new Date(); base.setHours(0,0,0,0);
+  for(let i=days-1;i>=0;i--){ const d=new Date(base); d.setDate(d.getDate()-i); const k=dayKey(d); const min=state.sessions.filter(s=>dayKey(s.endedAt)===k).reduce((a,s)=>a+s.duration/60,0); out.push({label:d.toLocaleDateString([], {weekday:'short'}),minutes:min,key:k}); }
   return out;
 }
-function tagClass(priority) { return priority === 'high' ? 'danger' : priority === 'medium' ? 'accent' : 'muted'; }
-
-function resetTimer(phase='focus') {
-  const total = durationForPhase(phase);
-  state.timer = { running:false, phase, remaining: state.selectedMode === 'stopwatch' ? 0 : total, total: total, cycle: state.timer.cycle || 1, taskId: state.timer.taskId, startedAt:null, accumulated:0 };
-  saveState();
-  render();
-}
-
-function startTimer() {
-  ensureAudio();
-  if (state.selectedMode === 'stopwatch') {
-    state.timer.running = true; state.timer.startedAt = state.timer.startedAt || Date.now(); state.timer.lastTick = Date.now();
-  } else {
-    if (state.timer.remaining <= 0) resetTimer(state.timer.phase);
-    state.timer.running = true; state.timer.startedAt = state.timer.startedAt || Date.now(); state.timer.lastTick = Date.now();
-  }
-  saveState();
-  requestNotifications();
-  tickTimer();
-  if (!timerInterval) timerInterval = setInterval(tickTimer, 250);
-  render();
-}
-function pauseTimer() {
-  if (state.selectedMode === 'stopwatch' && state.timer.remaining >= 60) {
-    state.sessions.push({ id:uid(), endedAt:new Date().toISOString(), duration:Math.round(state.timer.remaining), taskId:state.timer.taskId, mode:'stopwatch' });
-    const task = getCurrentTask();
-    if (task) task.focusedMinutes = (task.focusedMinutes || 0) + Math.round(state.timer.remaining/60);
-    if (state.alertEnabled) beep();
-    state.timer.remaining = 0;
-  }
-  state.timer.running = false;
-  state.timer.lastTick = null;
-  saveState(); render();
-}
-function skipPhase() { finishPhase(true); }
-function tickTimer() {
-  if (!state.timer.running) return;
-  const now = Date.now(); const delta = (now - (state.timer.lastTick || now)) / 1000; state.timer.lastTick = now;
-  if (state.selectedMode === 'stopwatch') state.timer.remaining += delta;
-  else state.timer.remaining -= delta;
-  if (state.timer.remaining <= 0 && state.selectedMode !== 'stopwatch') finishPhase(false);
-  updateTimerDom();
-}
-function finishPhase(skipped) {
-  const phase = state.timer.phase;
-  const mode = state.selectedMode;
-  state.timer.running = false;
-  state.timer.lastTick = null;
-  if (phase === 'focus' && !skipped) {
-    const total = state.timer.total || durationForPhase('focus');
-    const seconds = Math.max(60, Math.round(total));
-    state.sessions.push({ id:uid(), endedAt:new Date().toISOString(), duration:seconds, taskId:state.timer.taskId, mode });
-    const task = getCurrentTask();
-    if (task) task.focusedMinutes = (task.focusedMinutes || 0) + Math.round(seconds/60);
-    if (state.alertEnabled) beep();
-    if (state.notifications && 'Notification' in window && Notification.permission === 'granted') { try { new Notification('Focus complete', { body: task ? `${task.title} · ${Math.round(seconds/60)} minutes` : 'Nice work. Take a breath.' }); } catch {} }
-  } else if (phase !== 'focus' && !skipped && state.alertEnabled) beep();
-
-  if (mode === 'stopwatch') { state.timer.phase = 'focus'; state.timer.remaining = 0; state.timer.total = 0; saveState(); render(); return; }
-  if (mode === 'countdown') { state.timer.phase = 'focus'; state.timer.remaining = durationForPhase('focus'); state.timer.total = durationForPhase('focus'); saveState(); render(); return; }
-
-  if (phase === 'focus') {
-    const rounds = Math.max(1, Number(state.durations.rounds) || 4);
-    const isLong = state.timer.cycle % rounds === 0;
-    state.timer.phase = isLong ? 'long' : 'short';
-    state.timer.remaining = durationForPhase(state.timer.phase);
-    state.timer.total = state.timer.remaining;
-    state.timer.accumulated = 0;
-    if (!isLong && mode !== 'pomodoro') state.timer.cycle = state.timer.cycle;
-  } else {
-    state.timer.cycle = (state.timer.cycle % Math.max(1, Number(state.durations.rounds)||4)) + 1;
-    state.timer.phase = 'focus';
-    state.timer.remaining = durationForPhase('focus');
-    state.timer.total = state.timer.remaining;
-    state.timer.accumulated = 0;
-  }
-  saveState(); render();
-  if (state.autoStartBreaks && phase === 'focus') setTimeout(startTimer, 150);
-}
-
-function beep() {
-  try {
-    const ctx = ensureAudio(); const osc = ctx.createOscillator(); const gain = ctx.createGain();
-    osc.type='sine'; osc.frequency.value=880; gain.gain.setValueAtTime(0.0001,ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.18,ctx.currentTime+0.02); gain.gain.exponentialRampToValueAtTime(0.0001,ctx.currentTime+0.45); osc.connect(gain).connect(ctx.destination); osc.start(); osc.stop(ctx.currentTime+0.48);
-  } catch {}
-}
-function requestNotifications() {
-  if (!state.notifications || !('Notification' in window)) return;
-  if (Notification.permission === 'default') Notification.requestPermission().catch(()=>{});
-}
-
-class AudioEngine {
-  constructor() {
-    this.ctx = new (window.AudioContext || window.webkitAudioContext)();
-    this.master = this.ctx.createGain();
-    this.master.gain.value = 0.24;
-    this.master.connect(this.ctx.destination);
-    this.layers = new Map();
-  }
-  noiseBuffer(type) {
-    const rate = this.ctx.sampleRate;
-    const seconds = type === 'ocean' || type === 'wind' ? 6 : 4;
-    const length = rate * seconds;
-    const b = this.ctx.createBuffer(1, length, rate);
-    const data = b.getChannelData(0);
-    let brown = 0;
-    let pink = 0;
-    for (let i = 0; i < length; i++) {
-      const white = Math.random() * 2 - 1;
-      brown = (brown + 0.025 * white) / 1.025;
-      pink = 0.985 * pink + 0.12 * white;
-      let sample = white;
-      if (type === 'brown') sample = brown * 3.6;
-      if (type === 'rain') {
-        sample = white * 0.17;
-        if (Math.random() < 0.0008) sample += (Math.random() * 2 - 1) * 0.95;
-      }
-      if (type === 'cafe') {
-        sample = pink * 0.19;
-        if (Math.random() < 0.00045) sample += (Math.random() * 2 - 1) * 0.65;
-      }
-      if (type === 'fire') {
-        sample = brown * 1.9;
-        if (Math.random() < 0.00065) sample += (Math.random() * 2 - 1) * (0.4 + Math.random() * 1.2);
-      }
-      if (type === 'ocean') {
-        const wave = 0.5 + 0.5 * Math.sin(i / rate * 0.085 * Math.PI * 2 + 0.9);
-        sample = pink * (0.18 + wave * 0.36);
-      }
-      if (type === 'wind') {
-        const gust = 0.6 + 0.4 * Math.sin(i / rate * 0.045 * Math.PI * 2);
-        sample = brown * gust * 2.2;
-      }
-      if (type === 'white') sample = white * 0.22;
-      data[i] = sample;
-    }
-    return b;
-  }
-  add(name, volume = 0.28) {
-    if (this.layers.has(name)) { this.set(name, volume); return; }
-    const src = this.ctx.createBufferSource();
-    src.buffer = this.noiseBuffer(name);
-    src.loop = true;
-    const filter = this.ctx.createBiquadFilter();
-    const g = this.ctx.createGain();
-    g.gain.value = 0;
-    const lfo = this.ctx.createOscillator();
-    const lfoGain = this.ctx.createGain();
-
-    if (name === 'rain') { filter.type='bandpass'; filter.frequency.value=2600; filter.Q.value=0.45; lfo.frequency.value=0.18; lfoGain.gain.value=0.05; }
-    if (name === 'brown') { filter.type='lowpass'; filter.frequency.value=260; filter.Q.value=0.65; lfo.frequency.value=0.035; lfoGain.gain.value=0.02; }
-    if (name === 'cafe') { filter.type='bandpass'; filter.frequency.value=980; filter.Q.value=0.3; lfo.frequency.value=0.06; lfoGain.gain.value=0.035; }
-    if (name === 'fire') { filter.type='lowpass'; filter.frequency.value=1500; filter.Q.value=0.5; lfo.frequency.value=0.11; lfoGain.gain.value=0.045; }
-    if (name === 'ocean') { filter.type='lowpass'; filter.frequency.value=1050; filter.Q.value=0.6; lfo.frequency.value=0.075; lfoGain.gain.value=0.09; }
-    if (name === 'wind') { filter.type='lowpass'; filter.frequency.value=720; filter.Q.value=0.35; lfo.frequency.value=0.055; lfoGain.gain.value=0.07; }
-    if (name === 'white') { filter.type='highpass'; filter.frequency.value=600; filter.Q.value=0.25; lfo.frequency.value=0.025; lfoGain.gain.value=0.02; }
-
-    lfo.connect(lfoGain).connect(g.gain);
-    src.connect(filter).connect(g).connect(this.master);
-    src.start(); lfo.start();
-    this.layers.set(name,{src,g,filter,lfo});
-    this.set(name, volume);
-  }
-  set(name, value) {
-    const item = this.layers.get(name);
-    if (item) item.g.gain.setTargetAtTime(Number(value), this.ctx.currentTime, 0.08);
-    state.soundLayers[name] = Number(value);
-    saveState();
-  }
-  remove(name) {
-    const item = this.layers.get(name); if (!item) return;
-    try { item.src.stop(); item.lfo?.stop(); } catch {}
-    this.layers.delete(name); delete state.soundLayers[name]; saveState();
-  }
-  clear() { [...this.layers.keys()].forEach(k => this.remove(k)); state.soundLayers={}; saveState(); }
-  sync() { Object.entries(state.soundLayers).forEach(([k,v])=>this.add(k,Number(v))); }
-}
-
-function ensureAudio(){ if(!audioEngine) audioEngine=new AudioEngine(); if(audioEngine.ctx.state==='suspended') audioEngine.ctx.resume(); return audioEngine.ctx; }
-
-async function spotifyTokenFromCode(code) {
-  const cfg = spotifyConfig(); if(!cfg.clientId) throw new Error('No Spotify client ID configured.');
-  const verifier = localStorage.getItem(PKCE_KEY); if(!verifier) throw new Error('Missing PKCE verifier. Start the connection again.');
-  const body = new URLSearchParams({ client_id:cfg.clientId, grant_type:'authorization_code', code_verifier:verifier, code, redirect_uri:cfg.redirectUri });
-  const res = await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});
-  const data=await res.json(); if(!res.ok) throw new Error(data.error_description||'Spotify token exchange failed.');
-  const token={...data,obtained_at:Date.now()}; localStorage.setItem(TOKEN_KEY,JSON.stringify(token)); localStorage.removeItem(PKCE_KEY); return token;
-}
-function spotifyConfig(){ return { clientId:runtimeConfig.spotifyClientId || '', redirectUri:window.location.origin + window.location.pathname }; }
-async function loadRuntimeConfig(){ try { const res = await fetch('/.netlify/functions/config',{headers:{Accept:'application/json'}}); if(res.ok){ const data=await res.json(); runtimeConfig={...runtimeConfig,...data}; saveState(); render(); } } catch {} }
-async function pkceChallenge(verifier){ const bytes=new TextEncoder().encode(verifier); const digest=await crypto.subtle.digest('SHA-256',bytes); return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,''); }
-function randomString(len=64){ const a=new Uint8Array(len); crypto.getRandomValues(a); return Array.from(a,b=>('0'+b.toString(16)).slice(-2)).join(''); }
-async function connectSpotify(){
-  if(!runtimeConfig.spotifyClientId){ await loadRuntimeConfig(); }
-  const cfg=spotifyConfig();
-  if(!cfg.clientId){ showToast('Add VITE_SPOTIFY_CLIENT_ID in Netlify site settings to enable the Spotify connection.'); return; }
-  const verifier=randomString(48), challenge=await pkceChallenge(verifier); localStorage.setItem(PKCE_KEY,verifier);
-  const scope='playlist-read-private user-read-currently-playing user-read-playback-state';
-  const url=new URL('https://accounts.spotify.com/authorize');
-  url.search=new URLSearchParams({client_id:cfg.clientId,response_type:'code',redirect_uri:cfg.redirectUri,scope,code_challenge_method:'S256',code_challenge:challenge,state:randomString(20)}).toString();
-  window.location.href=url.toString();
-}
-async function spotifyApi(path, options={}){
-  let token=loadSpotifyToken(); if(!token) throw new Error('Not connected to Spotify.');
-  if(token.expires_in && Date.now() > token.obtained_at + (token.expires_in-60)*1000 && token.refresh_token){ token=await refreshSpotify(token); }
-  let res=await fetch('https://api.spotify.com/v1'+path,{...options,headers:{Authorization:`Bearer ${token.access_token}`,...(options.headers||{})}});
-  if(res.status===401 && token.refresh_token){ token=await refreshSpotify(token); res=await fetch('https://api.spotify.com/v1'+path,{...options,headers:{Authorization:`Bearer ${token.access_token}`,...(options.headers||{})}}); }
-  if(!res.ok){ const text=await res.text(); throw new Error(text || `Spotify request failed (${res.status})`); }
-  return res.status===204?null:res.json();
-}
-function loadSpotifyToken(){ try{return JSON.parse(localStorage.getItem(TOKEN_KEY)||'null')}catch{return null} }
-async function refreshSpotify(old){ const cfg=spotifyConfig(); const body=new URLSearchParams({grant_type:'refresh_token',refresh_token:old.refresh_token,client_id:cfg.clientId}); const res=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body}); const d=await res.json(); if(!res.ok) throw new Error(d.error_description||'Could not refresh Spotify session.'); const token={...old,...d,obtained_at:Date.now()}; localStorage.setItem(TOKEN_KEY,JSON.stringify(token)); return token; }
-async function loadSpotify(){
-  try{
-    const [me, pls, now] = await Promise.all([spotifyApi('/me'), spotifyApi('/me/playlists?limit=24'), spotifyApi('/me/player/currently-playing').catch(()=>null)]);
-    state.spotify={connected:true,profile:me,playlists:pls?.items||[],nowPlaying:now}; saveState(); render();
-  }catch(err){ showToast(err.message); }
-}
-function disconnectSpotify(){ localStorage.removeItem(TOKEN_KEY); state.spotify={connected:false,profile:null,playlists:[],nowPlaying:null}; saveState(); render(); }
-async function handleSpotifyCallback(){ const p=new URLSearchParams(location.search); const code=p.get('code'); if(!code) return; try{ await spotifyTokenFromCode(code); history.replaceState({},'',window.location.pathname+window.location.hash); await loadSpotify(); }catch(e){ showToast(e.message); history.replaceState({},'',window.location.pathname+window.location.hash); } }
-
-function navItems(){ return [
-  ['home','⌂','Home'],['focus','◷','Focus'],['tasks','✓','Tasks'],['stats','▥','Stats'],['sound','∿','Sound'],['settings','⚙','Settings']
-]; }
-function appShell(content){
-  const stats=taskStats();
-  return `<div class="app" data-theme="${esc(state.theme)}" style="--theme-art:url('${esc(THEMES[state.theme]?.art||THEMES.midnight.art)}');${state.customBg?`--custom-bg:url('${esc(state.customBg)}');`:''}">
-    <aside class="sidebar">
-      <button class="brand" data-action="nav" data-view="home"><span class="brand-mark">◔</span><span><b>FOCUS</b><em>FORGE</em></span></button>
-      <div class="side-kicker">WORKSPACE</div>
-      <nav>${navItems().map(([v,icon,label])=>`<button class="nav-btn ${state.view===v?'active':''}" data-action="nav" data-view="${v}"><span>${icon}</span>${label}${v==='tasks'&&stats.active?`<i>${stats.active}</i>`:''}</button>`).join('')}</nav>
-      <div class="sidebar-bottom">
-        <div class="mini-card"><div class="mini-label">CURRENT MODE</div><strong>${esc(currentMode().label)}</strong><span>${esc(currentMode().description)}</span></div>
-        <button class="ghost-btn full" data-action="quick-settings">Customize workspace <span>↗</span></button>
-        <div class="sidebar-foot"><span>Open source · free forever</span><span>v1.0</span></div>
-      </div>
-    </aside>
-    <main class="main">
-      <header class="topbar"><div class="mobile-brand">FOCUSFORGE</div><div class="breadcrumbs"><span>${state.view.toUpperCase()}</span><b>·</b><span>${localDateLabel()}</span></div><div class="top-actions"><button class="icon-btn" title="Request notifications" data-action="notify">◌</button><button class="avatar" data-action="nav" data-view="settings">${esc((state.greetingName||'T')[0].toUpperCase())}</button></div></header>
-      <section class="content">${content}</section>
-    </main>
-    <div id="toast" class="toast"></div>
-  </div>`;
+function currentTask(){ return state.tasks.find(t=>t.id===state.timer.taskId) || null; }
+function priorityScore(p){ return p==='high'?3:p==='medium'?2:1; }
+function sanitizeUrl(u){ try{ const x=new URL(u); return ['http:','https:'].includes(x.protocol)?x.href:''; }catch{return '';} }
+function themeStyle(){
+  const t=THEMES[state.theme];
+  const bg=state.customBg ? sanitizeUrl(state.customBg) : t.art;
+  const v=t.vars;
+  return `--bg:${v.bg};--panel:${v.panel};--panel2:${v.panel2};--accent:${v.accent};--accent2:${v.accent2};--warm:${v.warm};--art:url("${bg}");`;
 }
 
 function homeView(){
-  const today=focusMinutesForRange(1), week=focusMinutesForRange(7), streakN=streak();
   const active=state.tasks.filter(t=>!t.completed).sort((a,b)=>priorityScore(b.priority)-priorityScore(a.priority));
-  const featured=active[0];
-  const quote=QUOTES[new Date().getDate()%QUOTES.length];
-  return `<div class="home-screen">
-    <div class="home-top-grid">
-      <section class="hero-card panel">
-        <div class="hero-art" aria-hidden="true"></div>
-        <div class="hero-copy"><div class="eyebrow">${timeNow()} · ${localDateLabel()}</div><h1>Make space for <span>deep work.</span></h1><p>Welcome back, ${esc(state.greetingName||'there')}. One clear task, one focused block, no noise.</p></div>
-        <div class="hero-actions"><button class="primary-btn" data-action="start-focus">Start focus <span>⌁</span></button><button class="secondary-btn" data-action="nav" data-view="tasks">See tasks <span>→</span></button></div>
-        <div class="hero-meta"><span><b>${formatMinutes(today)}</b> today</span><span><b>${formatMinutes(week)}</b> this week</span><span><b>${streakN}</b> day streak</span></div>
-      </section>
-      <section class="panel priority-card">
-        <div class="panel-head"><div><span class="eyebrow">UP NEXT</span><h2>One thing at a time</h2></div><button class="link-btn" data-action="nav" data-view="tasks">All tasks →</button></div>
-        ${featured ? taskCard(featured,true) : emptyTasks()}
-      </section>
-    </div>
-    <div class="workspace-row"><div><span class="eyebrow">YOUR WORKSPACE</span><h2>Everything in one place</h2></div><div class="segmented"><button class="active" data-action="nav" data-view="focus">Focus</button><button data-action="nav" data-view="sound">Sound + Music</button></div></div>
-    <div class="home-dashboard-grid">
-      <section class="panel snapshot-panel"><div class="panel-head"><div><span class="eyebrow">7-DAY SNAPSHOT</span><h2>Focus rhythm</h2></div><span class="muted">${Math.round(week)} min</span></div>${miniChart(trend(7))}</section>
-      <section class="panel quote-panel"><div class="quote-mark">“</div><p>${state.quoteEnabled?esc(quote):'Quote mode is off. Keep the page quiet and let the work speak.'}</p><span>DAILY NOTE</span></section>
-      <section class="panel mode-panel"><div class="panel-head"><div><span class="eyebrow">TIMER MODE</span><h2>${currentMode().emoji} ${esc(currentMode().label)}</h2></div><button class="icon-btn" data-action="nav" data-view="settings">⚙</button></div><div class="mode-big">${state.selectedMode==='stopwatch'?'UP':formatTime(durationForPhase('focus'))}</div><div class="mode-sub">${esc(currentMode().description)}</div><button class="secondary-btn full" data-action="start-focus">Start ${esc(currentMode().label)}</button></section>
+  const next=active[0]; const today=Math.round(sessionMinutes(1)); const week=Math.round(sessionMinutes(7));
+  return `<div class="view view-home">
+    <div class="home-head"><div><span class="eyebrow">${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})} · ${new Date().toLocaleDateString([], {weekday:'long',month:'long',day:'numeric'})}</span><h1>Make space for <em>deep work.</em></h1><p>Welcome back, ${escapeHtml(state.greetingName||'there')}. Keep the next block simple.</p></div><div class="home-actions"><button class="primary" data-action="start-focus">Start focus <span>↗</span></button><button class="secondary" data-action="nav" data-view="tasks">Add task <span>＋</span></button></div></div>
+    <div class="home-grid">
+      <section class="glass hero-home"><div class="hero-copy"><span class="eyebrow">CURRENT MODE</span><strong>${selectedMode().icon} ${escapeHtml(selectedMode().label)}</strong><span>${escapeHtml(selectedMode().description)}</span></div><div class="home-time">${state.selectedMode==='stopwatch'?'UP':formatTime(durationSeconds('focus'))}</div><div class="home-hero-meta"><span><b>${formatMinutes(today)}</b> today</span><span><b>${formatMinutes(week)}</b> 7 days</span><span><b>${streak()}</b> streak</span></div></section>
+      <section class="glass upnext"><div class="section-mini"><span class="eyebrow">UP NEXT</span><button class="text-button" data-action="nav" data-view="tasks">All tasks →</button></div>${next?taskRow(next,true):`<div class="empty-inline"><span>+</span><div><strong>No task queued</strong><p>Add one concrete thing and make it the center of the next block.</p></div><button class="secondary" data-action="nav" data-view="tasks">Add task</button></div>`}</section>
+      <section class="glass snapshot"><div class="section-mini"><div><span class="eyebrow">7-DAY SNAPSHOT</span><strong>Focus rhythm</strong></div><span class="mono">${week} min</span></div>${miniBars(trend(7))}</section>
+      <section class="glass room-mini"><div class="section-mini"><div><span class="eyebrow">FOCUS ROOM</span><strong>${Object.keys(state.sounds).filter(k=>state.sounds[k]>0).length} sound layers</strong></div><button class="text-button" data-action="nav" data-view="sound">Open soundroom →</button></div><div class="chip-row">${activeSoundChips() || '<span class="muted">Nothing playing yet.</span>'}</div></section>
+      <section class="glass quote-home"><span class="quote-mark">“</span><p>${state.quoteEnabled?QUOTES[new Date().getDate()%QUOTES.length]:'Quotes are off. Let the work speak.'}</p><span class="eyebrow">DAILY NOTE</span></section>
     </div>
   </div>`;
 }
 
 function focusView(){
-  const mode=currentMode(); const total=state.timer.total || durationForPhase(state.timer.phase); const progress=state.selectedMode==='stopwatch'?0:Math.min(1,Math.max(0,1-(state.timer.remaining/Math.max(1,total))));
-  const current=getCurrentTask(); const taskList=state.tasks.filter(t=>!t.completed).sort((a,b)=>priorityScore(b.priority)-priorityScore(a.priority));
-  return `<div class="focus-layout">
-    <section class="focus-main panel">
-      <div class="focus-art-panel" aria-hidden="true"></div>
-      <div class="focus-top"><div><span class="eyebrow">${esc(state.timer.phase==='focus'?'FOCUS':'BREAK')} · ${esc(mode.label)}</span><h1>${state.timer.running?'Stay with it.':'Ready when you are.'}</h1></div><button class="icon-btn" data-action="open-timer-settings">⚙</button></div>
-      <div class="focus-core"><div class="ring-wrap"><div class="timer-ring" style="--progress:${Math.round(progress*360)}deg"><div class="timer-inner"><span>${state.selectedMode==='stopwatch'?'STOPWATCH':state.timer.phase==='focus'?'FOCUS':'RESET'}</span><strong id="timer-time">${formatTime(state.timer.remaining,state.selectedMode==='stopwatch')}</strong><em>${current?esc(current.title):'No task selected'}</em></div></div></div>
-      <div class="timer-stack"><div class="timer-controls"><button class="timer-round" data-action="reset">↺</button><button class="timer-play" data-action="toggle-timer">${state.timer.running?'Ⅱ':'▶'}</button><button class="timer-round" data-action="skip">→|</button></div><div class="timer-caption">${state.selectedMode==='stopwatch'?'Count up until you stop.':`${formatTime(state.timer.total)} session · cycle ${state.timer.cycle}`}</div></div></div>
-      <div class="focus-task-strip"><span>FOCUSING ON</span>${current?`<strong>${esc(current.title)}</strong>`:`<button class="link-btn" data-action="nav" data-view="tasks">Choose a task →</button>`}</div>
+  const mode=selectedMode(); const total=Math.max(1,state.timer.total||durationSeconds(state.timer.phase)); const progress=state.selectedMode==='stopwatch'?0:Math.min(1,Math.max(0,1-state.timer.remaining/total)); const task=currentTask();
+  return `<div class="view view-focus">
+    <section class="focus-stage glass">
+      <div class="focus-art" style="background-image:var(--art)"></div>
+      <div class="focus-overlay"></div>
+      <div class="focus-content">
+        <div class="focus-top"><div><span class="eyebrow">${state.timer.phase==='focus'?'FOCUS':'BREAK'} · ${escapeHtml(mode.label)}</span><h1>${state.timer.running?'Stay with it.':'Ready when you are.'}</h1><p>${task?escapeHtml(task.title):'Pick a task below or start without one.'}</p></div><button class="icon" data-action="nav" data-view="settings" title="Timer settings">⚙</button></div>
+        <div class="timer-zone"><div class="timer-ring" style="--progress:${Math.round(progress*360)}deg"><div class="timer-inner"><span>${state.selectedMode==='stopwatch'?'STOPWATCH':state.timer.phase==='focus'?'FOCUS':'RESET'}</span><strong id="timer-time">${formatTime(state.timer.remaining)}</strong><em>${task?escapeHtml(task.title):'No task selected'}</em></div></div></div>
+        <div class="timer-controls"><button class="timer-primary" data-action="toggle-timer">${state.timer.running?'Pause':'Start'}</button><button class="secondary" data-action="reset">Reset</button><button class="secondary" data-action="skip">Skip phase</button></div>
+        <div class="focus-bottom"><span>Round ${state.timer.cycle} · ${escapeHtml(mode.description)}</span><button class="text-button" data-action="nav" data-view="tasks">Choose task →</button></div>
+      </div>
     </section>
-    <aside class="focus-side">
-      <section class="panel task-panel"><div class="panel-head"><div><span class="eyebrow">PRIORITY QUEUE</span><h2>What is next?</h2></div><button class="link-btn" data-action="nav" data-view="tasks">Manage →</button></div>${taskList.length?taskList.slice(0,5).map(t=>taskCard(t,false)).join(''):emptyTasks()}</section>
-      <section class="panel sound-mini"><div class="panel-head"><div><span class="eyebrow">SOUND + MUSIC</span><h2>Build your room</h2></div><button class="link-btn" data-action="nav" data-view="sound">Open →</button></div>${soundMini()}</section>
-    </aside>
   </div>`;
 }
 
 function tasksView(){
   const active=state.tasks.filter(t=>!t.completed).sort((a,b)=>priorityScore(b.priority)-priorityScore(a.priority));
   const done=state.tasks.filter(t=>t.completed);
-  return `<div class="section-head"><div><span class="eyebrow">TASKS</span><h1>Keep the queue small.</h1><p>Front-load what matters. Give deep work a single destination.</p></div></div>
-  <form class="task-composer panel" id="task-form">
-    <div class="task-compose-main"><span class="compose-icon">+</span><input name="title" autocomplete="off" placeholder="What needs your attention?" aria-label="Task title" required /></div>
-    <input class="compose-small" type="number" name="estimate" min="1" max="480" value="25" aria-label="Estimated minutes" title="Estimated minutes" />
-    <select class="compose-small" name="priority" aria-label="Priority" title="Priority"><option value="high">High</option><option value="medium" selected>Medium</option><option value="low">Low</option></select>
-    <input class="compose-tag" name="tag" maxlength="24" placeholder="tag" aria-label="Tag" />
-    <button class="primary-btn" type="submit">Add task <span>↵</span></button>
-  </form>
-  <div class="tasks-layout"><section class="panel task-list-panel"><div class="list-toolbar"><span>${active.length} active</span><span>${done.length} completed</span><button type="button" class="ghost-btn" data-action="toggle-completed">${state.showCompleted?'Hide':'Show'} completed</button></div>${active.length?active.map(t=>taskCard(t,true)).join(''):'<div class="blank-slate"><div>✓</div><h3>Queue is clear.</h3><p>Add one concrete thing and start there.</p></div>'}${state.showCompleted&&done.length?`<div class="completed-divider">COMPLETED</div>${done.map(t=>taskCard(t,true)).join('')}`:''}</section>
-  <aside class="panel task-guide"><span class="eyebrow">WORKING RULES</span><div class="rule"><b>01</b><span>One task can be active at a time.</span></div><div class="rule"><b>02</b><span>Add an estimate so a vague task becomes a concrete block.</span></div><div class="rule"><b>03</b><span>Complete the session before switching context.</span></div><div class="task-progress"><div class="progress-label"><span>Today</span><b>${Math.round(focusMinutesForRange(1))} min</b></div><div class="progress-bar"><i style="width:${Math.min(100,focusMinutesForRange(1)/120*100)}%"></i></div><small>Target: 2h</small></div></aside></div>`;
-}
-function taskCard(task, featured=false){
-  const selected=state.timer.taskId===task.id; const mins=task.estimate||25;
-  return `<article class="task-row ${selected?'selected':''} ${task.completed?'completed':''}">
-    <button class="check ${task.completed?'checked':''}" data-action="toggle-task" data-id="${task.id}">${task.completed?'✓':''}</button>
-    <button class="task-main" data-action="select-task" data-id="${task.id}"><span class="task-title">${esc(task.title)}</span><span class="task-meta"><i class="pill ${tagClass(task.priority)}">${esc(task.priority||'low')}</i><span>${mins} min</span>${task.tag?`<span>· ${esc(task.tag)}</span>`:''}</span></button>
-    <div class="task-actions"><button class="mini-icon ${selected?'active':''}" title="Focus this task" data-action="select-task" data-id="${task.id}">◷</button><button class="mini-icon" title="Delete" data-action="delete-task" data-id="${task.id}">×</button></div>
-  </article>`;
-}
-function emptyTasks(){ return `<div class="blank-slate small"><div>+</div><h3>No task in the queue.</h3><p>Add something concrete, then make it the center of the timer.</p><button class="link-btn" data-action="focus-task-input">Add a task →</button></div>`; }
-function priorityScore(p){ return p==='high'?3:p==='medium'?2:1; }
-function addTaskFromForm(form){
-  const fd=new FormData(form); const title=String(fd.get('title')||'').trim(); if(!title) return;
-  const estimate=Math.max(1,Math.min(480,Number(fd.get('estimate')||25)));
-  const priority=['high','medium','low'].includes(fd.get('priority'))?fd.get('priority'):'medium';
-  const tag=String(fd.get('tag')||'').trim();
-  state.tasks.push({id:uid(),title,estimate,priority,tag,completed:false,createdAt:new Date().toISOString(),focusedMinutes:0});
-  saveState(); render(); setTimeout(()=>document.querySelector('#task-form input[name="title"]')?.focus(),0);
+  return `<div class="view"><div class="section-head"><div><span class="eyebrow">TASKS</span><h1>Give the timer a target.</h1><p>Capture the next concrete thing instead of carrying the whole list in your head.</p></div><span class="count-badge">${active.length} active</span></div>
+    <section class="glass task-composer"><form id="task-form"><div class="task-title-input"><span class="plus">＋</span><input name="title" autocomplete="off" placeholder="What are you actually trying to finish?" required></div><div class="task-fields"><label><span>Estimate</span><div class="input-with-suffix"><input type="number" name="estimate" min="1" max="480" value="25"><em>min</em></div></label><label><span>Priority</span><select name="priority"><option value="medium">Medium</option><option value="high">High</option><option value="low">Low</option></select></label><label><span>Tag</span><input name="tag" maxlength="24" placeholder="school, coding…"></label><button class="primary" type="submit">Add task</button></div></form></section>
+    <section class="task-list">${active.map(t=>taskRow(t)).join('') || '<div class="glass empty-state"><strong>Your queue is clear.</strong><span>Use the composer above when the next thing becomes concrete.</span></div>'}</section>
+    ${done.length?`<div class="completed-wrap"><button class="text-button" data-action="toggle-completed">${state.showCompleted?'Hide':'Show'} completed · ${done.length}</button>${state.showCompleted?`<section class="task-list completed-list">${done.map(t=>taskRow(t)).join('')}</section>`:''}</div>`:''}
+  </div>`;
 }
 
 function statsView(){
-  const d7=trend(7), d30=trend(30), today=Math.round(focusMinutesForRange(1)), week=Math.round(focusMinutesForRange(7)), month=Math.round(focusMinutesForRange(30)), streakN=streak();
-  const taskDone=state.tasks.filter(t=>t.completed).length; const totalFocus=state.sessions.reduce((n,s)=>n+s.duration/60,0);
-  const max=Math.max(30,...d7.map(d=>d.minutes));
-  return `<div class="section-head"><div><span class="eyebrow">FOCUS STATS</span><h1>See your actual work.</h1><p>Sessions are logged automatically when a focus block completes.</p></div><button class="secondary-btn" data-action="export">Export data</button></div>
-  <div class="stat-cards"><div class="stat-card"><span>Today</span><strong>${formatMinutes(today)}</strong><small>${Math.round(today/60*100)/100} focus hours</small></div><div class="stat-card"><span>7 days</span><strong>${formatMinutes(week)}</strong><small>${state.sessions.filter(s=>new Date(s.endedAt).getTime()>Date.now()-604800000).length} sessions</small></div><div class="stat-card"><span>30 days</span><strong>${formatMinutes(month)}</strong><small>${Math.round(month/60*100)/100} focus hours</small></div><div class="stat-card accent-stat"><span>Streak</span><strong>${streakN}d</strong><small>Keep showing up</small></div></div>
-  <div class="stats-grid"><section class="panel chart-panel"><div class="panel-head"><div><span class="eyebrow">LAST 7 DAYS</span><h2>Focus rhythm</h2></div><span class="muted">${Math.round(d7.reduce((n,d)=>n+d.minutes,0))} min</span></div><div class="bar-chart">${d7.map(d=>`<div class="bar-col"><span class="bar-value">${d.minutes?Math.round(d.minutes):''}</span><div class="bar-track"><i style="height:${Math.max(5,d.minutes/max*100)}%"></i></div><small>${d.label}</small></div>`).join('')}</div></section>
-  <section class="panel breakdown-panel"><div class="panel-head"><div><span class="eyebrow">OUTPUT</span><h2>Work profile</h2></div></div><div class="donut" style="--p:${Math.min(100,(today/120)*100)}%"><div><strong>${Math.min(100,Math.round(today/120*100))}%</strong><span>of 2h target</span></div></div><div class="break-list"><div><span>Focus sessions</span><b>${state.sessions.length}</b></div><div><span>Tasks completed</span><b>${taskDone}</b></div><div><span>All-time focus</span><b>${formatMinutes(totalFocus)}</b></div></div></section></div>
-  <section class="panel history-panel"><div class="panel-head"><div><span class="eyebrow">HISTORY</span><h2>Recent sessions</h2></div><button class="ghost-btn" data-action="clear-sessions">Clear history</button></div><div class="history-table">${state.sessions.slice().reverse().slice(0,15).map(s=>`<div class="history-row"><span>${new Date(s.endedAt).toLocaleDateString([], {month:'short',day:'numeric'})}</span><b>${formatMinutes(s.duration/60)}</b><span>${esc(MODES[s.mode]?.label||s.mode)}</span><span>${esc(state.tasks.find(t=>t.id===s.taskId)?.title||'Focus session')}</span></div>`).join('') || '<div class="blank-slate small">No completed sessions yet.</div>'}</div></section>`;
+  const d7=trend(7), max=Math.max(30,...d7.map(x=>x.minutes)), today=Math.round(sessionMinutes(1)), week=Math.round(sessionMinutes(7)), month=Math.round(sessionMinutes(30));
+  return `<div class="view"><div class="section-head"><div><span class="eyebrow">FOCUS STATS</span><h1>See your actual work.</h1><p>Only completed focus blocks count here.</p></div><button class="secondary" data-action="export">Export data</button></div>
+    <div class="stats-cards"><div class="glass stat"><span>Today</span><b>${formatMinutes(today)}</b><small>${state.sessions.filter(s=>dayKey(s.endedAt)===dayKey()).length} sessions</small></div><div class="glass stat"><span>7 days</span><b>${formatMinutes(week)}</b><small>${state.sessions.filter(s=>new Date(s.endedAt).getTime()>Date.now()-7*86400000).length} sessions</small></div><div class="glass stat"><span>30 days</span><b>${formatMinutes(month)}</b><small>${formatMinutes(state.sessions.reduce((a,s)=>a+s.duration/60,0))} all time</small></div><div class="glass stat accent-stat"><span>Streak</span><b>${streak()}d</b><small>days with completed focus</small></div></div>
+    <div class="stats-grid"><section class="glass chart"><div class="section-mini"><div><span class="eyebrow">LAST 7 DAYS</span><strong>Focus rhythm</strong></div><span class="mono">${week} min</span></div><div class="bar-chart">${d7.map(d=>`<div class="bar-column"><span>${d.minutes?Math.round(d.minutes):''}</span><div class="bar-track"><i style="height:${Math.max(5,d.minutes/max*100)}%"></i></div><small>${d.label}</small></div>`).join('')}</div></section>
+    <section class="glass breakdown"><div class="section-mini"><div><span class="eyebrow">OUTPUT</span><strong>Today at a glance</strong></div></div><div class="ring-stat" style="--p:${Math.min(100,today/120*100)}%"><b>${Math.min(100,Math.round(today/120*100))}%</b><span>of 2h target</span></div><div class="break-list"><div><span>Focus sessions</span><b>${state.sessions.length}</b></div><div><span>Tasks completed</span><b>${state.tasks.filter(t=>t.completed).length}</b></div><div><span>All-time focus</span><b>${formatMinutes(state.sessions.reduce((a,s)=>a+s.duration/60,0))}</b></div></div></section></div>
+    <section class="glass history"><div class="section-mini"><div><span class="eyebrow">HISTORY</span><strong>Recent sessions</strong></div><button class="text-button" data-action="clear-sessions">Clear history</button></div><div class="history-list">${state.sessions.slice().reverse().slice(0,20).map(s=>`<div><span>${new Date(s.endedAt).toLocaleDateString([], {month:'short',day:'numeric'})}</span><b>${formatMinutes(s.duration/60)}</b><span>${escapeHtml(MODES[s.mode]?.label||s.mode)}</span><span>${escapeHtml(state.tasks.find(t=>t.id===s.taskId)?.title||'Focus session')}</span></div>`).join('') || '<div class="empty-state"><strong>No completed sessions yet.</strong></div>'}</div></section>
+  </div>`;
 }
 
 function soundView(){
-  const layers=Object.entries(SOUND_DEFS); const active=layers.filter(([k])=>state.soundLayers[k]);
-  const sp=state.spotify, cfg=spotifyConfig();
-  return `<div class="section-head"><div><span class="eyebrow">SOUNDROOM</span><h1>Build the room around you.</h1><p>These textures are synthesized locally in your browser, then your music sits directly underneath them.</p></div><div class="sound-total"><span>${active.length}</span> layers</div></div>
-  <div class="sound-layout"><section class="panel sound-grid">${layers.map(([key,d])=>{const val=state.soundLayers[key]||0;return `<div class="sound-card ${val?'on':''}" data-sound="${key}"><div class="sound-icon">${d.icon}</div><div class="sound-info"><strong>${esc(d.label)}</strong><span>${esc(d.detail)}</span></div><button class="sound-toggle" data-action="toggle-sound" data-sound="${key}">${val?'−':'+'}</button><input type="range" min="0" max="0.7" step="0.01" value="${val}" data-action="sound-volume" data-sound="${key}" aria-label="${esc(d.label)} volume"/></div>`}).join('')}</section>
-  <aside class="panel sound-side"><span class="eyebrow">MASTER</span><h2>Your focus room</h2><div class="master-knob"><div><strong id="master-value">${Math.round((audioEngine?.master?.gain.value||0.24)*100)}%</strong><span>output</span></div></div><input class="wide-range" type="range" min="0" max="0.8" step="0.01" value="${audioEngine?.master?.gain.value||0.24}" data-action="master-volume" aria-label="Master volume"><p>Layer rain with ocean for motion, café with brown noise for busy environments, or fireplace with wind for a warmer room.</p><button class="secondary-btn full" data-action="stop-sounds">Clear soundscape</button></aside></div>
-  <section class="sound-music-block">
-    <div class="sound-music-heading"><div><span class="eyebrow">MUSIC</span><h2>Playlists, right below your sounds.</h2></div><span class="muted">opens in Spotify</span></div>
-    <div class="music-inline-grid">
-      <section class="panel playlist-panel"><div class="playlist-grid">${CURATED_PLAYLISTS.map(p=>`<a class="playlist-card" href="${p.url}" target="_blank" rel="noreferrer"><div class="playlist-art">${p.glyph}</div><div><strong>${esc(p.title)}</strong><span>${esc(p.note)}</span></div><b>↗</b></a>`).join('')}</div></section>
-      <aside class="panel spotify-panel">${sp.connected && sp.profile ? `<div class="spotify-user"><div class="spotify-avatar">${esc((sp.profile.display_name||'S')[0].toUpperCase())}</div><div><span class="eyebrow">CONNECTED</span><h2>${esc(sp.profile.display_name||'Spotify')}</h2><p>${sp.playlists.length} playlists loaded</p></div><button class="ghost-btn" data-action="spotify-disconnect">Disconnect</button></div>${sp.nowPlaying?.item?`<div class="now-playing"><span class="eyebrow">NOW PLAYING</span><strong>${esc(sp.nowPlaying.item.name)}</strong><span>${esc(sp.nowPlaying.item.artists?.map(a=>a.name).join(', ')||'')}</span></div>`:''}<div class="my-playlists">${sp.playlists.slice(0,8).map(p=>`<a href="${p.external_urls.spotify}" target="_blank" rel="noreferrer"><span>${esc(p.name)}</span><b>↗</b></a>`).join('')}</div>`:`<div class="spotify-lock"><div class="spotify-mark">●</div><span class="eyebrow">OPTIONAL CONNECTION</span><h2>Your Spotify, here.</h2><p>Connect with Spotify’s browser-safe Authorization Code + PKCE flow. No client secret is stored in this app.</p>${cfg.clientId?'<button class="secondary-btn full" data-action="spotify-connect">Connect Spotify</button>':'<div class="setup-note">Add <code>VITE_SPOTIFY_CLIENT_ID</code> to Netlify site settings to enable this.</div>'}</div>`}</aside>
-    </div>
-  </section>`;
+  const activeCount=Object.values(state.sounds).filter(v=>v>0).length;
+  return `<div class="view view-sound"><div class="section-head"><div><span class="eyebrow">SOUNDROOM</span><h1>Build the room around you.</h1><p>Every sound below is a real local audio loop in your repo. Music lives right underneath the soundboards.</p></div><span class="count-badge">${activeCount} layers</span></div>
+    <div class="sound-layout"><section class="glass sound-board">${Object.entries(SOUNDS).map(([key,s])=>soundCard(key,s)).join('')}</section>
+    <aside class="glass master-card"><span class="eyebrow">MASTER</span><h2>Room volume</h2><div class="master-value" id="master-value">${Math.round(state.master*100)}%</div><input type="range" min="0" max="0.8" step="0.01" value="${state.master}" data-action="master-volume"><p>Mix the layers independently, then use one master control for the entire room.</p><button class="secondary full" data-action="stop-sounds">Clear soundscape</button></aside></div>
+    <section class="music-section"><div class="section-mini"><div><span class="eyebrow">MUSIC</span><strong>Curated playlists + Spotify</strong></div><span class="muted">opens in Spotify</span></div><div class="music-grid">${PLAYLISTS.map(p=>`<a class="playlist" href="${p.url}" target="_blank" rel="noopener noreferrer"><div class="playlist-art">${p.icon}</div><div><strong>${escapeHtml(p.title)}</strong><span>${escapeHtml(p.note)}</span></div><b>↗</b></a>`).join('')}
+      <div class="spotify-connect glass-inner">${spotifyBlock()}</div>
+    </div></section>
+  </div>`;
 }
-function soundMini(){
-  const active=Object.entries(state.soundLayers).filter(([,v])=>v).slice(0,3); return active.length ? active.map(([k,v])=>`<div class="sound-chip"><span>${SOUND_DEFS[k]?.icon||'∿'} ${esc(SOUND_DEFS[k]?.label||k)}</span><b>${Math.round(v*100)}</b></div>`).join('') : '<div class="sound-empty">No layers active. <button class="link-btn" data-action="nav" data-view="sound">Add sound →</button></div>';
-}
-
-function miniChart(data){ const max=Math.max(20,...data.map(x=>x.minutes)); return `<div class="mini-chart">${data.map(x=>`<div><i style="height:${Math.max(8,x.minutes/max*100)}%"></i><small>${x.label[0]}</small></div>`).join('')}</div>`; }
 
 function settingsView(){
-  const cfg=MODES[state.selectedMode];
-  return `<div class="section-head"><div><span class="eyebrow">SETTINGS</span><h1>Make it yours.</h1><p>Everything is stored locally in your browser unless you choose to connect Spotify.</p></div><button class="ghost-btn" data-action="reset-app">Reset app</button></div>
-  <div class="settings-grid"><section class="panel settings-panel"><div class="settings-group"><span class="eyebrow">APPEARANCE</span><h2>Theme</h2><div class="theme-grid">${Object.entries(THEMES).map(([k,t])=>`<button class="theme-card ${state.theme===k?'active':''}" data-action="theme" data-theme-value="${k}"><span class="theme-thumb" style="background-image:url('${esc(t.art)}')"></span><strong>${esc(t.label)}</strong><small>${esc(t.kicker)}</small></button>`).join('')}</div><label class="field"><span>Custom background URL</span><input value="${esc(state.customBg)}" placeholder="https://…" data-setting="customBg"></label></div>
-  <div class="settings-group"><span class="eyebrow">TIMER</span><h2>Mode</h2><select class="select" data-setting="selectedMode">${Object.entries(MODES).map(([k,m])=>`<option value="${k}" ${state.selectedMode===k?'selected':''}>${m.emoji} ${m.label} — ${m.description}</option>`).join('')}</select><div class="timer-fields">${timerField('Focus minutes','focus',state.durations.focus)}${timerField('Short break','short',state.durations.short)}${timerField('Long break','long',state.durations.long)}${timerField('Rounds','rounds',state.durations.rounds)}${state.selectedMode==='countdown'?timerField('Countdown','countdown',state.durations.countdown):''}${state.selectedMode==='animedoro'?timerField('Animedoro focus','animedoro',state.durations.animedoro):''}</div></div></section>
-  <aside class="panel settings-side"><div class="toggle-row"><div><b>Motivational quotes</b><span>Show a small daily note on Home.</span></div><input type="checkbox" ${state.quoteEnabled?'checked':''} data-setting="quoteEnabled"></div><div class="toggle-row"><div><b>Notifications</b><span>Browser alerts when a session ends.</span></div><input type="checkbox" ${state.notifications?'checked':''} data-setting="notifications"></div><div class="toggle-row"><div><b>Auto-start breaks</b><span>Start the break as soon as focus ends.</span></div><input type="checkbox" ${state.autoStartBreaks?'checked':''} data-setting="autoStartBreaks"></div><div class="toggle-row"><div><b>Alert sound</b><span>Play a small local chime.</span></div><input type="checkbox" ${state.alertEnabled?'checked':''} data-setting="alertEnabled"></div><div class="settings-group compact"><span class="eyebrow">PROFILE</span><label class="field"><span>Your name</span><input value="${esc(state.greetingName)}" data-setting="greetingName" placeholder="there"></label></div><div class="settings-group compact"><span class="eyebrow">KEYBOARD</span><div class="shortcut"><kbd>Space</kbd><span>Start / pause timer</span></div><div class="shortcut"><kbd>R</kbd><span>Reset timer</span></div><div class="shortcut"><kbd>1–6</kbd><span>Jump between workspaces</span></div></div></aside></div>`;
+  const mode=selectedMode();
+  return `<div class="view"><div class="section-head"><div><span class="eyebrow">SETTINGS</span><h1>Make it yours.</h1><p>Everything except Spotify stays in this browser.</p></div><button class="text-button" data-action="reset-app">Reset app</button></div>
+    <div class="settings-grid"><section class="glass settings-panel"><div class="settings-group"><span class="eyebrow">THEME</span><h2>Choose a world</h2><div class="theme-grid">${Object.entries(THEMES).map(([k,t])=>`<button class="theme-choice ${state.theme===k?'active':''}" data-action="theme" data-theme-value="${k}"><span style="background-image:url('${t.art}')"></span><strong>${escapeHtml(t.label)}</strong><small>${escapeHtml(t.kicker)}</small></button>`).join('')}</div><label class="field"><span>Custom background URL</span><input data-setting="customBg" value="${escapeHtml(state.customBg)}" placeholder="https://example.com/image.jpg"></label></div>
+      <div class="settings-group"><span class="eyebrow">TIMER</span><h2>${mode.icon} Timer rhythm</h2><select class="field-control" data-setting="selectedMode">${Object.entries(MODES).map(([k,m])=>`<option value="${k}" ${state.selectedMode===k?'selected':''}>${m.label} — ${m.description}</option>`).join('')}</select><div class="timer-fields"><label class="field"><span>Focus minutes</span><input type="number" min="1" max="480" data-setting="durations.focus" value="${state.durations.focus}"></label><label class="field"><span>Short break</span><input type="number" min="1" max="120" data-setting="durations.short" value="${state.durations.short}"></label><label class="field"><span>Long break</span><input type="number" min="1" max="240" data-setting="durations.long" value="${state.durations.long}"></label><label class="field"><span>Rounds</span><input type="number" min="1" max="12" data-setting="durations.rounds" value="${state.durations.rounds}"></label>${state.selectedMode==='countdown'?`<label class="field"><span>Countdown</span><input type="number" min="1" max="480" data-setting="durations.countdown" value="${state.durations.countdown}"></label>`:''}${state.selectedMode==='animedoro'?`<label class="field"><span>Animedoro focus</span><input type="number" min="1" max="480" data-setting="durations.animedoro" value="${state.durations.animedoro}"></label>`:''}</div></div></section>
+    <aside class="glass settings-side"><div class="toggle"><div><b>Browser notifications</b><span>Alert when a focus or break ends.</span></div><input type="checkbox" data-setting="notifications" ${state.notifications?'checked':''}></div><div class="toggle"><div><b>Auto-start breaks</b><span>Jump directly into the next break.</span></div><input type="checkbox" data-setting="autoStartBreaks" ${state.autoStartBreaks?'checked':''}></div><div class="toggle"><div><b>Timer alert sound</b><span>Use the local chime at phase changes.</span></div><input type="checkbox" data-setting="alertEnabled" ${state.alertEnabled?'checked':''}></div><div class="toggle"><div><b>Daily note</b><span>Keep the small quote on Home.</span></div><input type="checkbox" data-setting="quoteEnabled" ${state.quoteEnabled?'checked':''}></div><div class="settings-group"><span class="eyebrow">PROFILE</span><label class="field"><span>Your name</span><input data-setting="greetingName" value="${escapeHtml(state.greetingName)}"></label></div><div class="settings-group"><span class="eyebrow">SHORTCUTS</span><div class="shortcut"><kbd>Space</kbd><span>start / pause</span></div><div class="shortcut"><kbd>R</kbd><span>reset</span></div><div class="shortcut"><kbd>1–6</kbd><span>jump workspaces</span></div></div></aside></div>
+  </div>`;
 }
-function timerField(label,key,val){ return `<label class="field small-field"><span>${label}</span><input type="number" min="1" max="480" value="${val}" data-setting="durations.${key}"></label>`; }
+
+function taskRow(t,featured=false){
+  const selected=state.timer.taskId===t.id;
+  return `<article class="task-row ${selected?'selected':''} ${featured?'featured':''} ${t.completed?'completed':''}"><button class="check ${t.completed?'checked':''}" data-action="toggle-task" data-id="${t.id}">${t.completed?'✓':''}</button><button class="task-body" data-action="select-task" data-id="${t.id}"><strong>${escapeHtml(t.title)}</strong><span><i class="pill ${t.priority}">${t.priority}</i><em>${t.estimate} min</em>${t.tag?`<em>· ${escapeHtml(t.tag)}</em>`:''}</span></button><div class="task-actions"><button class="mini-action ${selected?'active':''}" title="Focus this task" data-action="select-task" data-id="${t.id}">◷</button><button class="mini-action" title="Delete" data-action="delete-task" data-id="${t.id}">×</button></div></article>`;
+}
+function activeSoundChips(){
+  return Object.entries(state.sounds).filter(([,v])=>v>0).slice(0,4).map(([k,v])=>`<span class="sound-chip">${SOUNDS[k]?.icon||'∿'} ${escapeHtml(SOUNDS[k]?.label||k)} <b>${Math.round(v*100)}</b></span>`).join('');
+}
+function soundCard(key,s){
+  const val=Number(state.sounds[key]||0);
+  return `<div class="sound-item ${val>0?'on':''}"><button class="sound-main" data-action="toggle-sound" data-sound="${key}"><span class="sound-icon">${s.icon}</span><span><strong>${escapeHtml(s.label)}</strong><small>${escapeHtml(s.detail)}</small></span><b>${val>0?'−':'+'}</b></button><input type="range" min="0" max="0.7" step="0.01" value="${val}" data-action="sound-volume" data-sound="${key}" aria-label="${escapeHtml(s.label)} volume"></div>`;
+}
+function miniBars(data){ const max=Math.max(20,...data.map(d=>d.minutes)); return `<div class="mini-bars">${data.map(d=>`<div><i style="height:${Math.max(7,d.minutes/max*100)}%"></i><small>${d.label[0]}</small></div>`).join('')}</div>`; }
+function spotifyBlock(){
+  if(state.spotify.connected && state.spotify.profile){
+    const now=state.spotify.nowPlaying?.item;
+    return `<div><div class="spotify-user"><div class="spotify-badge">S</div><div><span class="eyebrow">CONNECTED</span><strong>${escapeHtml(state.spotify.profile.display_name||'Spotify')}</strong><small>${state.spotify.playlists.length} playlists loaded</small></div></div>${now?`<div class="now-playing"><span class="eyebrow">NOW PLAYING</span><strong>${escapeHtml(now.name)}</strong><span>${escapeHtml(now.artists?.map(a=>a.name).join(', ')||'')}</span></div>`:''}<button class="secondary full" data-action="spotify-refresh">Refresh Spotify</button><button class="text-button full" data-action="spotify-disconnect">Disconnect</button></div>`;
+  }
+  return `<div><span class="eyebrow">OPTIONAL CONNECTION</span><h3>Bring your Spotify library here.</h3><p>Connect with Authorization Code + PKCE. No Spotify client secret is stored in the browser.</p>${runtime.spotifyClientId?'<button class="secondary full" data-action="spotify-connect">Connect Spotify</button>':'<div class="setup-note">Set <code>SPOTIFY_CLIENT_ID</code> in Netlify to enable the connection.</div>'}</div>`;
+}
+
+function shell(content){
+  const t=THEMES[state.theme];
+  return `<div class="app" data-theme="${state.theme}" style="${themeStyle()}"><div class="art-backdrop"></div><aside class="sidebar"><button class="brand" data-action="nav" data-view="home"><span class="brand-mark">◔</span><span><b>FOCUS</b><em>FORGE</em></span></button><div class="side-kicker">WORKSPACE</div><nav>${[['home','⌂','Home'],['focus','◷','Focus'],['tasks','✓','Tasks'],['stats','▥','Stats'],['sound','∿','Sound'],['settings','⚙','Settings']].map(([v,i,l])=>`<button class="nav-button ${state.view===v?'active':''}" data-action="nav" data-view="${v}"><span>${i}</span>${l}${v==='tasks'&&state.tasks.filter(x=>!x.completed).length?`<i>${state.tasks.filter(x=>!x.completed).length}</i>`:''}</button>`).join('')}</nav><div class="sidebar-bottom"><div class="mode-card"><span class="eyebrow">CURRENT MODE</span><strong>${t?escapeHtml(selectedMode().label):''}</strong><span>${escapeHtml(selectedMode().description)}</span></div><button class="ghost full" data-action="nav" data-view="settings">Customize workspace <span>↗</span></button><small>Free · open source</small></div></aside><main class="main"><header class="topbar"><div class="mobile-brand">FOCUSFORGE</div><div class="crumb">${state.view.toUpperCase()} <span>·</span> ${new Date().toLocaleDateString([], {month:'short',day:'numeric'})}</div><div class="top-actions"><button class="icon" data-action="notify" title="Notifications">◌</button><button class="avatar" data-action="nav" data-view="settings">${escapeHtml((state.greetingName||'T')[0].toUpperCase())}</button></div></header><div class="content">${content}</div></main><div class="toast" id="toast"></div></div>`;
+}
 
 function render(){
-  document.getElementById('app').innerHTML=appShell(({home:homeView,focus:focusView,tasks:tasksView,stats:statsView,sound:soundView,settings:settingsView}[state.view]||homeView)());
-  updateTimerDom();
-  if(audioEngine) syncAudioUi();
+  const app=document.getElementById('app'); if(!app)return;
+  const viewMap={home:homeView,focus:focusView,tasks:tasksView,stats:statsView,sound:soundView,settings:settingsView};
+  app.innerHTML=shell((viewMap[state.view]||homeView)());
+  updateTimerDom(); syncAudioUI(); updateClock();
 }
-function syncAudioUi(){ document.querySelectorAll('[data-sound]').forEach(card=>{ const key=card.dataset.sound; const val=Number(state.soundLayers[key]||0); card.classList.toggle('on',val>0); const range=card.querySelector('[data-action="sound-volume"]'); if(range) range.value=val; const label=card.querySelector('.sound-info span'); if(label) label.textContent=val?`${Math.round(val*100)}% volume`:`${SOUND_DEFS[key]?.detail||''}`; }); const master=document.querySelector('[data-action="master-volume"]'); const gain=audioEngine?.master?.gain.value??0.24; if(master) master.value=gain; const value=document.getElementById('master-value'); if(value) value.textContent=`${Math.round(gain*100)}%`; }
-function updateTimerDom(){ const el=document.getElementById('timer-time'); if(el) el.textContent=formatTime(state.timer.remaining,state.selectedMode==='stopwatch'); const ring=document.querySelector('.timer-ring'); if(ring && state.timer.total){ ring.style.setProperty('--progress',`${Math.round(Math.min(1,Math.max(0,1-state.timer.remaining/state.timer.total))*360)}deg`); } }
-function showToast(msg){ const el=document.getElementById('toast'); if(!el) return; el.textContent=msg; el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),3200); }
-function addTask(){ document.querySelector('#task-form input[name="title"]')?.focus(); }
+function updateClock(){ const el=document.querySelector('.topbar .crumb'); if(el)el.innerHTML=`${state.view.toUpperCase()} <span>·</span> ${new Date().toLocaleTimeString([], {hour:'numeric',minute:'2-digit'})}`; }
+function toast(msg){ const el=document.getElementById('toast'); if(!el)return; el.textContent=msg; el.classList.add('show'); clearTimeout(el._t); el._t=setTimeout(()=>el.classList.remove('show'),2800); }
+
+function ensureAudio(){ audio.initialized=true; Object.entries(state.sounds).forEach(([k,v])=>{if(Number(v)>0)playSound(k,Number(v));}); }
+function playSound(key,volume){
+  const def=SOUNDS[key]; if(!def)return;
+  let a=audio.players.get(key);
+  if(!a){ a=new Audio(`/assets/audio/${def.file}`); a.loop=true; a.preload='auto'; audio.players.set(key,a); }
+  a.volume=Math.min(1,Math.max(0,volume*state.master));
+  a.play().catch(()=>{});
+}
+function stopSound(key){ const a=audio.players.get(key); if(a){a.pause(); a.currentTime=0; audio.players.delete(key);} }
+function stopAllSounds(){ [...audio.players.keys()].forEach(stopSound); state.sounds={}; save(); }
+function syncAudioUI(){
+  document.querySelectorAll('.sound-item').forEach(el=>{const k=el.querySelector('[data-sound]')?.dataset.sound; const v=Number(state.sounds[k]||0); el.classList.toggle('on',v>0); const r=el.querySelector('input[type=range]'); if(r)r.value=v;});
+  const m=document.querySelector('[data-action="master-volume"]'); if(m)m.value=state.master;
+  const mv=document.getElementById('master-value'); if(mv)mv.textContent=`${Math.round(state.master*100)}%`;
+}
+function updateTimerDom(){
+  const el=document.getElementById('timer-time'); if(el)el.textContent=state.selectedMode==='stopwatch'?formatTime(state.timer.remaining):formatTime(state.timer.remaining);
+  const ring=document.querySelector('.timer-ring'); if(ring&&state.timer.total)ring.style.setProperty('--progress',`${Math.round((1-state.timer.remaining/state.timer.total)*360)}deg`);
+}
+function startTimer(){
+  ensureAudio();
+  if(state.selectedMode!=='stopwatch' && state.timer.remaining<=0){state.timer.remaining=durationSeconds(state.timer.phase);state.timer.total=state.timer.remaining;}
+  if(!state.timer.startedAt)state.timer.startedAt=Date.now(); state.timer.lastTick=Date.now(); state.timer.running=true; save(); requestNotifications();
+  if(!timerInterval)timerInterval=setInterval(tick,250);
+  render();
+}
+function pauseTimer(){ state.timer.running=false; state.timer.lastTick=null; if(state.selectedMode==='stopwatch'&&state.timer.remaining>=60)recordSession(Math.round(state.timer.remaining), 'stopwatch'); save(); render(); }
+function resetTimer(phase='focus'){ state.timer={...state.timer,running:false,phase,remaining:state.selectedMode==='stopwatch'?0:durationSeconds(phase),total:state.selectedMode==='stopwatch'?0:durationSeconds(phase),startedAt:null,lastTick:null}; save(); render(); }
+function skipPhase(){ finishPhase(true); }
+function tick(){
+  if(!state.timer.running)return;
+  const now=Date.now(); const delta=(now-(state.timer.lastTick||now))/1000; state.timer.lastTick=now;
+  if(state.selectedMode==='stopwatch')state.timer.remaining+=delta; else state.timer.remaining-=delta;
+  if(state.selectedMode!=='stopwatch'&&state.timer.remaining<=0){state.timer.remaining=0; finishPhase(false);} else updateTimerDom();
+}
+function recordSession(seconds,mode=state.selectedMode){ const safe=Math.max(60,Math.round(seconds)); state.sessions.push({id:uid(),endedAt:new Date().toISOString(),duration:safe,taskId:state.timer.taskId,mode}); const t=currentTask(); if(t)t.focusedMinutes=(t.focusedMinutes||0)+Math.round(safe/60); }
+function finishPhase(skipped){
+  const phase=state.timer.phase;
+  state.timer.running=false; state.timer.lastTick=null;
+  if(phase==='focus'&&!skipped){ recordSession(state.timer.total||durationSeconds('focus')); if(state.alertEnabled)beep(); notify('Focus complete',currentTask()?`${currentTask().title} · ${Math.round((state.timer.total||0)/60)} min`:'Nice work. Take a breath.'); }
+  if(phase!=='focus'&&!skipped&&state.alertEnabled)beep();
+  if(state.selectedMode==='countdown'||state.selectedMode==='stopwatch'){resetTimer('focus');return;}
+  if(phase==='focus'){ const rounds=Math.max(1,Number(state.durations.rounds)||4); state.timer.phase=(state.timer.cycle%rounds===0)?'long':'short'; state.timer.remaining=durationSeconds(state.timer.phase); state.timer.total=state.timer.remaining; }
+  else { const rounds=Math.max(1,Number(state.durations.rounds)||4); state.timer.cycle=(state.timer.cycle%rounds)+1; state.timer.phase='focus'; state.timer.remaining=durationSeconds('focus'); state.timer.total=state.timer.remaining; }
+  state.timer.startedAt=null; save(); render();
+  if(state.autoStartBreaks&&phase==='focus')setTimeout(startTimer,120);
+}
+function beep(){ try{const c=new (window.AudioContext||window.webkitAudioContext)();const o=c.createOscillator(),g=c.createGain();o.frequency.value=880;o.type='sine';g.gain.setValueAtTime(.0001,c.currentTime);g.gain.exponentialRampToValueAtTime(.14,c.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,c.currentTime+.38);o.connect(g).connect(c.destination);o.start();o.stop(c.currentTime+.4);}catch{} }
+function requestNotifications(){ if(!state.notifications || !('Notification' in window))return; if(Notification.permission==='default')Notification.requestPermission().catch(()=>{}); }
+function notify(title,body){ if(state.notifications&&'Notification' in window&&Notification.permission==='granted'){try{new Notification(title,{body});}catch{}} }
+
+function addTask(form){
+  const fd=new FormData(form); const title=String(fd.get('title')||'').trim(); if(!title)return;
+  const estimate=Math.min(480,Math.max(1,Number(fd.get('estimate')||25))); const priority=['high','medium','low'].includes(fd.get('priority'))?fd.get('priority'):'medium'; const tag=String(fd.get('tag')||'').trim();
+  state.tasks.push({id:uid(),title,estimate,priority,tag,completed:false,createdAt:new Date().toISOString(),focusedMinutes:0}); save(); render(); setTimeout(()=>document.querySelector('#task-form input[name="title"]')?.focus(),0);
+}
+function exportData(){ const b=new Blob([JSON.stringify({exportedAt:new Date().toISOString(),tasks:state.tasks,sessions:state.sessions,settings:{theme:state.theme,mode:state.selectedMode,durations:state.durations}},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`focusforge-${dayKey()}.json`;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),500); }
+
+function applySetting(el){
+  const key=el.dataset.setting; if(!key)return; let val=el.type==='checkbox'?el.checked:el.value; if(el.type==='number')val=Number(val);
+  if(key.startsWith('durations.'))state.durations[key.split('.')[1]]=val; else state[key]=val;
+  if(key==='selectedMode') { const m=MODES[val]||MODES.custom; if(val==='pomodoro'){state.durations={...state.durations,focus:25,short:5,long:15,rounds:4};} if(val==='52-17'){state.durations={...state.durations,focus:52,short:17,long:17,rounds:1};} if(val==='deep'){state.durations={...state.durations,focus:90,short:20,long:20,rounds:1};} if(val==='animedoro'){state.durations={...state.durations,focus:40,short:20,long:20,rounds:1,animedoro:40};} if(val==='countdown')state.durations.countdown=m.focus||30; resetTimer('focus'); return; }
+  if(key==='customBg'||key==='greetingName'||key.startsWith('durations.'))render(); save();
+}
+
+async function loadRuntime(){ try{const r=await fetch('/.netlify/functions/config',{headers:{Accept:'application/json'}});if(r.ok){const d=await r.json();runtime={...runtime,...d};}}catch{} }
+function spotifyConfig(){ return {clientId:runtime.spotifyClientId||'',redirectUri:window.location.origin+'/'}; }
+function randomString(len=48){const a=new Uint8Array(len);crypto.getRandomValues(a);return Array.from(a,b=>('0'+b.toString(16)).slice(-2)).join('');}
+async function challenge(v){const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(v));return btoa(String.fromCharCode(...new Uint8Array(digest))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'');}
+function loadSpotifyToken(){try{return JSON.parse(localStorage.getItem(TOKEN_KEY)||'null');}catch{return null;}}
+async function connectSpotify(){
+  if(!runtime.spotifyClientId){toast('Add SPOTIFY_CLIENT_ID in Netlify site settings first.');return;}
+  const verifier=randomString(); localStorage.setItem(PKCE_KEY,verifier); const c=await challenge(verifier); const cfg=spotifyConfig(); const u=new URL('https://accounts.spotify.com/authorize');
+  u.search=new URLSearchParams({client_id:cfg.clientId,response_type:'code',redirect_uri:cfg.redirectUri,scope:'playlist-read-private user-read-currently-playing user-read-playback-state',code_challenge_method:'S256',code_challenge:c}).toString(); window.location.assign(u.href);
+}
+async function spotifyCallback(){const p=new URLSearchParams(location.search);const code=p.get('code');if(!code)return;const verifier=localStorage.getItem(PKCE_KEY);if(!verifier)return;try{const cfg=spotifyConfig();const body=new URLSearchParams({client_id:cfg.clientId,grant_type:'authorization_code',code_verifier:verifier,code,redirect_uri:cfg.redirectUri});const r=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body});const d=await r.json();if(!r.ok)throw new Error(d.error_description||'Spotify connection failed.');localStorage.setItem(TOKEN_KEY,JSON.stringify({...d,obtainedAt:Date.now()}));localStorage.removeItem(PKCE_KEY);history.replaceState({},'',location.pathname);await loadSpotify();}catch(e){toast(e.message);history.replaceState({},'',location.pathname);}}
+async function spotifyApi(path){const token=loadSpotifyToken();if(!token)throw new Error('Not connected.');const r=await fetch('https://api.spotify.com/v1'+path,{headers:{Authorization:`Bearer ${token.access_token}`}});if(!r.ok)throw new Error(await r.text()||`Spotify ${r.status}`);return r.status===204?null:r.json();}
+async function loadSpotify(){try{const [me,pl,now]=await Promise.all([spotifyApi('/me'),spotifyApi('/me/playlists?limit=24'),spotifyApi('/me/player/currently-playing').catch(()=>null)]);state.spotify={connected:true,profile:me,playlists:pl?.items||[],nowPlaying:now};save();render();}catch(e){toast(e.message);}}
+function disconnectSpotify(){localStorage.removeItem(TOKEN_KEY);state.spotify={...DEFAULT.spotify};save();render();}
+
+function setup(){
+  document.addEventListener('submit',e=>{if(e.target.id==='task-form'){e.preventDefault();addTask(e.target);}});
+  document.addEventListener('click',e=>{
+    const el=e.target.closest('[data-action]');if(!el)return;const a=el.dataset.action;
+    if(a==='nav'){state.view=el.dataset.view;save();render();return;}
+    if(a==='start-focus'){state.view='focus';save();startTimer();return;}
+    if(a==='toggle-timer'){state.timer.running?pauseTimer():startTimer();return;}
+    if(a==='reset'){resetTimer(state.timer.phase);return;}
+    if(a==='skip'){skipPhase();return;}
+    if(a==='select-task'){state.timer.taskId=el.dataset.id;save();render();return;}
+    if(a==='toggle-task'){const t=state.tasks.find(t=>t.id===el.dataset.id);if(t){t.completed=!t.completed;if(t.completed&&state.timer.taskId===t.id)state.timer.taskId=null;save();render();}return;}
+    if(a==='delete-task'){state.tasks=state.tasks.filter(t=>t.id!==el.dataset.id);if(state.timer.taskId===el.dataset.id)state.timer.taskId=null;save();render();return;}
+    if(a==='toggle-completed'){state.showCompleted=!state.showCompleted;return render();}
+    if(a==='theme'){state.theme=el.dataset.themeValue;save();render();return;}
+    if(a==='toggle-sound'){const k=el.dataset.sound;ensureAudio();if(state.sounds[k]){stopSound(k);delete state.sounds[k];}else{state.sounds[k]=.32;playSound(k,.32);}save();render();return;}
+    if(a==='stop-sounds'){stopAllSounds();render();return;}
+    if(a==='notify'){requestNotifications();toast('Notification permission requested.');return;}
+    if(a==='export'){exportData();return;}
+    if(a==='clear-sessions'){if(confirm('Clear all focus history on this device?')){state.sessions=[];save();render();}return;}
+    if(a==='reset-app'){if(confirm('Reset FocusForge data on this device?')){localStorage.removeItem(STORAGE_KEY);localStorage.removeItem(TOKEN_KEY);location.reload();}return;}
+    if(a==='spotify-connect'){connectSpotify();return;}
+    if(a==='spotify-refresh'){loadSpotify();return;}
+    if(a==='spotify-disconnect'){disconnectSpotify();return;}
+  });
+  document.addEventListener('input',e=>{
+    const el=e.target;
+    if(el.dataset.action==='sound-volume'){const k=el.dataset.sound,v=Math.max(0,Math.min(.7,Number(el.value)));ensureAudio();if(v===0){stopSound(k);delete state.sounds[k];}else{state.sounds[k]=v;playSound(k,v);}save();syncAudioUI();return;}
+    if(el.dataset.action==='master-volume'){state.master=Number(el.value);Object.entries(audio.players).forEach(()=>{});audio.players.forEach((a,k)=>{a.volume=Number(state.sounds[k]||0)*state.master;});save();syncAudioUI();return;}
+    if(el.dataset.setting==='customBg'){state.customBg=el.value.trim();save();render();return;}
+  });
+  document.addEventListener('change',e=>{const el=e.target.closest('[data-setting]');if(el)applySetting(el);});
+  window.addEventListener('keydown',e=>{if(['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName))return;if(e.code==='Space'){e.preventDefault();state.timer.running?pauseTimer():startTimer();}if(e.key.toLowerCase()==='r')resetTimer(state.timer.phase);const map={'1':'home','2':'focus','3':'tasks','4':'stats','5':'sound','6':'settings'};if(map[e.key]){state.view=map[e.key];save();render();}});
+}
 
 async function boot(){
-  if ('serviceWorker' in navigator) navigator.serviceWorker.register('/sw.js').catch(()=>{});
-  setupEvents();
-  await handleSpotifyCallback().catch(()=>{});
-  await loadRuntimeConfig();
+  setup();
+  await loadRuntime();
+  await spotifyCallback();
+  const token=loadSpotifyToken(); if(token)state.spotify.connected=true;
   render();
-  if(state.timer.running){ state.timer.running=false; state.timer.startedAt=null; state.timer.lastTick=null; saveState(); }
-  if(loadSpotifyToken()) loadSpotify().catch(()=>{});
+  if(state.sounds && Object.keys(state.sounds).length)audio={...audio,initialized:false,players:new Map()};
+  if(token)loadSpotify().catch(()=>{});
+  clearInterval(clockInterval); clockInterval=setInterval(updateClock,30000);
 }
 
 boot();

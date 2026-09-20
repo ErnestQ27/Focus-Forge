@@ -1,14 +1,14 @@
-# FocusForge theme artwork
+# FocusForge assets
 
-FocusForge now uses real landscape photography from Unsplash rather than the original synthetic SVG backgrounds. The app references the image CDN directly so the GitHub/Netlify repo stays lightweight.
+Audio loops in `audio/` are generated specifically for FocusForge and are local, so the Soundroom does not depend on an external audio host.
 
-## Photo sources
+Theme artwork uses remote Unsplash photographs in `src/main.js` so the repo stays small. The current sources selected are:
 
-- **Cosmic Dunes** — Pic Kaca, “Stars shine brightly over dark desert dunes at night”: https://unsplash.com/photos/stars-shine-brightly-over-dark-desert-dunes-at-night-gbmYqH4Wv1U
-- **PNW Coast** — Steve Gribble, “Rough ocean waves crashing against rocky coastline at sunset”: https://unsplash.com/photos/rough-ocean-waves-crashing-against-rocky-coastline-at-sunset-PvAC_yGyWHA
-- **Desert Twilight** — Ekaterina Boltaga, “A group of sand dunes in the desert”: https://unsplash.com/photos/a-group-of-sand-dunes-in-the-desert-piRB4Sta7vY
-- **Alpine Coast** — Robert Katzki, “A mountain covered in snow with a sky background”: https://unsplash.com/photos/a-mountain-covered-in-snow-with-a-sky-background-b10Cc99gMlM
-- **Moonlit Observatory** — Venti Views, “Lighthouse during night”: https://unsplash.com/photos/lighthouse-during-night-P9nllGEKOGg
-- **Aurora Bay** — Angela Compagnone, “Aurora borealis above mountain and body of water”: https://unsplash.com/photos/aurora-borealis-above-mountain-and-body-of-water-l9cneQNE03Y
+- Cosmic Dunes / desert night: https://unsplash.com/photos/stars-shine-brightly-over-dark-desert-dunes-at-night-gbmYqH4Wv1U
+- Desert Twilight: https://unsplash.com/photos/sun-setting-over-vast-desert-sand-dunes-ywOWmk02NFQ
+- Alpine: https://unsplash.com/photos/landscape-photography-of-mountain-y-njhJIffIo
+- PNW Coast: https://unsplash.com/s/photos/costa-de-oregon
+- Aurora Bay: https://unsplash.com/photos/a-green-and-blue-aurora-above-a-snowy-mountain-range-pUqW9tM7nTM
+- Moonlit Coast: https://unsplash.com/photos/lighthouse-on-a-rocky-coast-under-the-milky-way-IW7KXVfrTp4
 
-Each source page identifies the image as free to use under the Unsplash License at the time this repo was updated.
+These URLs are used as visual references/backgrounds; check the current source page/license before redistributing a downloaded copy.
