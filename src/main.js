@@ -377,13 +377,33 @@ function setup(){
 
 async function boot(){
   setup();
-  await loadRuntime();
-  await spotifyCallback();
-  const token=loadSpotifyToken(); if(token)state.spotify.connected=true;
+
+  // Render the app immediately.
+  // Spotify/runtime configuration is optional and must never block the UI.
   render();
-  if(state.sounds && Object.keys(state.sounds).length)audio={...audio,initialized:false,players:new Map()};
-  if(token)loadSpotify().catch(()=>{});
-  clearInterval(clockInterval); clockInterval=setInterval(updateClock,30000);
+
+  // Load optional Netlify runtime configuration in the background.
+  loadRuntime()
+    .catch(() => {})
+    .finally(() => {
+      render();
+    });
+
+  // Handle an existing Spotify callback without blocking initial render.
+  spotifyCallback().catch(() => {});
+
+  const token = loadSpotifyToken();
+  if (token) {
+    state.spotify.connected = true;
+    loadSpotify().catch(() => {});
+  }
+
+  if (state.sounds && Object.keys(state.sounds).length) {
+    audio = { ...audio, initialized: false, players: new Map() };
+  }
+
+  clearInterval(clockInterval);
+  clockInterval = setInterval(updateClock, 30000);
 }
 
 boot();
