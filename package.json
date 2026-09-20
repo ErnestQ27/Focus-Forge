@@ -1,0 +1,10 @@
+{
+  "name": "focusforge",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Free, open-source focus workspace for Netlify.",
+  "scripts": {
+    "serve": "python3 -m http.server 8080",
+    "preview": "python3 -m http.server 8080"
+  }
+}
